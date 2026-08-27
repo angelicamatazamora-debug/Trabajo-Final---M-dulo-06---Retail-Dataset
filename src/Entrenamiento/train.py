@@ -96,3 +96,14 @@ with mlflow.start_run():
     mlflow.sklearn.log_model(kmeans, "kmeans_model")
     
     print(" Modelo registrado en MLflow")
+
+import joblib
+from pathlib import Path
+
+# Crear carpeta models si no existe
+Path("models").mkdir(exist_ok=True)
+
+# Guardar modelo y scaler
+joblib.dump(kmeans, "models/kmeans_model.pkl")
+joblib.dump(scaler, "models/scaler.pkl")
+print("✅ Modelo y scaler guardados en models/")
