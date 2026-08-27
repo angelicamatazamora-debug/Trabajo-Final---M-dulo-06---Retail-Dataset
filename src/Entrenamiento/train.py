@@ -77,3 +77,22 @@ sil_score = silhouette_score(X_scaled, labels)
 ch_score = calinski_harabasz_score(X_scaled, labels)
 print(f"   Silhouette Score: {sil_score:.4f}")
 print(f"   Calinski-Harabasz: {ch_score:.4f}")
+
+#Mlflow
+import mlflow
+import mlflow.sklearn
+mlflow.set_experiment("Experimento_Clustering_RFM")
+
+with mlflow.start_run():
+    # Log de parámetros
+    mlflow.log_param("n_clusters", 4)
+    mlflow.log_param("random_state", 42)
+    
+    # Log de métricas
+    mlflow.log_metric("silhouette_score", sil_score)
+    mlflow.log_metric("calinski_harabasz", ch_score)
+    
+    # Guardar el modelo
+    mlflow.sklearn.log_model(kmeans, "kmeans_model")
+    
+    print(" Modelo registrado en MLflow")
