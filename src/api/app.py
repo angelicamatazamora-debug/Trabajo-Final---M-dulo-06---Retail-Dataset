@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import mlflow
+mlflow.set_tracking_uri("file:./mlruns")
 import mlflow.sklearn
 import joblib
 from pathlib import Path
@@ -50,7 +51,7 @@ app = FastAPI(
 )
 
 # Cargar el modelo y el scaler 
-MODEL_NAME = "RetailKMeansModel"
+MODEL_NAME = "kmeans_model"
 
 # Intentar cargar desde MLflow 
 try:
