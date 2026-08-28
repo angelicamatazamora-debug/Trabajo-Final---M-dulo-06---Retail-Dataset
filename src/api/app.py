@@ -1,10 +1,8 @@
-
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import mlflow
-mlflow.set_tracking_uri("file:./mlruns")
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
 import mlflow.sklearn
 import joblib
 from pathlib import Path
@@ -15,45 +13,26 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Definir esquemas de entrada y salida 
-class CustomerFeatures(BaseModel):
-    recency: float
-    frequency: float
-    monetary: float
-    qty_media: float
-    qty_total_comprada: float
-    unitprice_medio: float
+from src.api.schemas import CustomerFeatures, PredictionResponse, HealthResponse
 
-class PredictionResponse(BaseModel):
-    cluster: int
-    model_version: str
-    timestamp: str
-
-class HealthResponse(BaseModel):
-    status: str
-    model_loaded: bool
-    version: str
-    timestamp: str
-
-# Crear la aplicación FastAPI 
+# Crear la aplicación FastAPI
 app = FastAPI(
     title="API de Segmentación de Clientes - Retail",
     description="""
     API para segmentación de clientes basada en comportamiento de compra.
-    
+
     ## Modelo utilizado:
     - Algoritmo: K-Means clustering
     - Número de clusters: 4
     - Features: RFM enriquecido (6 variables)
     """,
     version="1.0.0"
-
 )
 
-# Cargar el modelo y el scaler 
-MODEL_NAME = "kmeans_model"
+# Cargar el modelo y el scaler
+MODEL_NAME = "kmeans_rfm_clustering"
 
-# Intentar cargar desde MLflow 
+# Intentar cargar desde MLflow
 try:
     model = mlflow.sklearn.load_model(f"models:/{MODEL_NAME}/latest")
     logger.info(f" Modelo {MODEL_NAME} cargado desde MLflow")
@@ -77,17 +56,18 @@ else:
     scaler = None
     logger.warning("Scaler no encontrado")
 
-# Endpoints 
+# Endpoints
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
     """Verifica el estado de la API y si el modelo está cargado."""
     return HealthResponse(
         status="ok" if model is not None else "degraded",
+        message="Servicio operativo" if model is not None else "Modelo no disponible",
         model_loaded=model is not None,
-        version="1.0.0",
-        timestamp=datetime.now().isoformat()
+        model_version=MODEL_NAME if model is not None else None
     )
+
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict(features: CustomerFeatures):
@@ -100,26 +80,30 @@ def predict(features: CustomerFeatures):
     try:
         # Convertir a DataFrame
         input_df = pd.DataFrame([features.dict()])
-        
+
         # Aplicar log transform (igual que en entrenamiento)
         input_log = np.log1p(input_df)
-        
+
         # Escalar
         if scaler is None:
             raise HTTPException(status_code=500, detail="Scaler no disponible")
         input_scaled = scaler.transform(input_log)
-        
+
         # Predecir
         cluster = model.predict(input_scaled)[0]
-        
+        distances = model.transform(input_scaled)
+        distance_to_centroid = float(distances[0][cluster])
+
         return PredictionResponse(
             cluster=int(cluster),
-            model_version="latest",
+            distance_to_centroid=distance_to_centroid,
+            model_version=MODEL_NAME,
             timestamp=datetime.now().isoformat()
         )
     except Exception as e:
         logger.error(f"Error en predicción: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 # --- Punto de entrada para ejecución directa ---
 if __name__ == "__main__":

@@ -1,19 +1,21 @@
 # Importar Librerías iniciales
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
-#Esquema de entrada para la predicción de segmentación de clientes
+
+
+# Esquema de entrada para la predicción de segmentación de clientes
 class CustomerFeatures(BaseModel):
     """
     Esquema de entrada para la predicción de segmentación de clientes
     """
-    recency: int = Field(..., description="Días desde la última compra")
-    frequency: int = Field(..., description="Número de compras realizadas")
-    monetary: float = Field(..., description="Gasto total acumulado")
-    qty_media: float = Field(..., description="Cantidad promedio por compra")
-    qty_total_comprada: int = Field(..., description="Cantidad total de productos comprados")
-    unitprice_medio: float = Field(..., description="Precio promedio por unidad")
-    
+    recency: int = Field(..., ge=0, description="Días desde la última compra")
+    frequency: int = Field(..., gt=0, description="Número de compras realizadas")
+    monetary: float = Field(..., gt=0, description="Gasto total acumulado")
+    qty_media: float = Field(..., gt=0, description="Cantidad promedio por compra")
+    qty_total_comprada: int = Field(..., gt=0, description="Cantidad total de productos comprados")
+    unitprice_medio: float = Field(..., gt=0, description="Precio promedio por unidad")
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -26,7 +28,8 @@ class CustomerFeatures(BaseModel):
             }
         }
 
-#Esquema de salida para la predicción de segmentación de clientes
+
+# Esquema de salida para la predicción de segmentación de clientes
 class PredictionResponse(BaseModel):
     """
     Respuesta de la predicción.
@@ -37,9 +40,10 @@ class PredictionResponse(BaseModel):
     timestamp: str = Field(..., description="Timestamp de la predicción")
     cluster_profile: Optional[dict] = Field(None, description="Perfil del cluster")
 
+
 class HealthResponse(BaseModel):
     """Verifica el estado de salud del servicio."""
     status: str
     message: str
     model_loaded: bool
-    model_version: Optional[str] = None 
+    model_version: Optional[str] = None
