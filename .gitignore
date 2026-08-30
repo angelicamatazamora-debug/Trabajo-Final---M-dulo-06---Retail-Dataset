@@ -13,6 +13,9 @@ data/external/
 *.csv
 *.parquet
 
+# Ignorar entornos virtuales
+online_retail_project/
+
 # MLflow
 mlruns/
 mlflow.db
