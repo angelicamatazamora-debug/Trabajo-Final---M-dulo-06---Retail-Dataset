@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Segmentación de Clientes - Retail Analytics</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            flex-direction: column;
+        }
+        .content-wrapper {
+            flex: 1;
+        }
+        .card {
+            border: none;
+            border-radius: 1rem;
+        }
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar superior -->
+    <nav class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container-fluid px-4">
+            <span class="navbar-brand mb-0 h1 fs-6 fs-md-5"><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Retail Data Science | MLOps</span>
+            <span class="text-secondary small">API Status: <span class="text-success fw-bold">● Online</span></span>
+        </div>
+    </nav>
+
+    <!-- Contenedor Principal -->
+    <div class="content-wrapper container py-4 py-md-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-10 col-lg-8">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-gradient bg-primary text-white p-4 rounded-top-4">
+                        <h3 class="mb-1 fs-4 fs-md-3"><i class="bi bi-cpu me-2"></i>Simulador de Segmentación RFM</h3>
+                        <p class="mb-0 text-white-50 small">Ingrese los indicadores del cliente para evaluar su clúster de comportamiento mediante Machine Learning.</p>
+                    </div>
+                    <div class="card-body p-3 p-md-5">
+                        <form id="predictionForm">
+                            <div class="row g-3">
+                                <div class="col-12 col-sm-6">
+                                    <label for="recency" class="form-label fw-semibold"><i class="bi bi-clock-history text-muted me-1"></i> Recency (Días)</label>
+                                    <input type="number" step="any" class="form-control" id="recency" value="326.0" required>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label for="frequency" class="form-label fw-semibold"><i class="bi bi-repeat text-muted me-1"></i> Frequency</label>
+                                    <input type="number" step="any" class="form-control" id="frequency" value="1.0" required>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label for="monetary" class="form-label fw-semibold"><i class="bi bi-currency-dollar text-muted me-1"></i> Monetary ($)</label>
+                                    <input type="number" step="any" class="form-control" id="monetary" value="77183.6" required>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label for="qty_media" class="form-label fw-semibold"><i class="bi bi-bar-chart text-muted me-1"></i> Qty Media</label>
+                                    <input type="number" step="any" class="form-control" id="qty_media" value="74215.0" required>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label for="qty_total_comprada" class="form-label fw-semibold"><i class="bi bi-boxes text-muted me-1"></i> Qty Total Comprada</label>
+                                    <input type="number" step="any" class="form-control" id="qty_total_comprada" value="74215.0" required>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label for="unitprice_medio" class="form-label fw-semibold"><i class="bi bi-tag text-muted me-1"></i> Unit Price Medio</label>
+                                    <input type="number" step="any" class="form-control" id="unitprice_medio" value="1.04" required>
+                                </div>
+                            </div>
+                            <div class="mt-4 d-grid">
+                                <button type="submit" id="btnSubmit" class="btn btn-dark btn-lg rounded-pill shadow-sm">
+                                    <i class="bi bi-magic me-2"></i> Predecir Clúster
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Contenedor de Resultados -->
+                        <div id="resultContainer" class="mt-4 d-none">
+                            <div class="alert alert-success border-0 shadow-sm p-4" role="alert">
+                                <h5 class="alert-heading text-success fw-bold mb-3"><i class="bi bi-check-circle-fill me-2"></i>Segmentación Exitosa</h5>
+                                <div class="row align-items-center g-3">
+                                    <div class="col-12 col-sm-6 text-center text-sm-start">
+                                        <span class="d-block text-muted small text-uppercase">Clúster Asignado</span>
+                                        <span id="resCluster" class="badge bg-success fs-3 px-4 py-2"></span>
+                                    </div>
+                                    <div class="col-12 col-sm-6 text-center text-sm-start">
+                                        <p class="mb-1"><strong>Distancia:</strong> <span id="resDistance" class="font-monospace"></span></p>
+                                        <p class="mb-0 text-muted small"><i class="bi bi-shield-check me-1"></i>Modelo v<span id="resVersion" class="fw-semibold"></span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contenedor de Errores -->
+                        <div id="errorContainer" class="mt-4 d-none">
+                            <div class="alert alert-danger border-0 shadow-sm p-3" role="alert">
+                                <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error de Validación</h6>
+                                <p class="mb-0 small font-monospace" id="errorMessage" style="white-space: pre-wrap;"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Corporativo -->
+    <footer class="bg-dark text-white text-center py-3 mt-auto shadow-sm">
+        <div class="container">
+            <p class="mb-0 small text-secondary">
+                <i class="bi bi-code-slash me-1"></i> Desarrollado para el Proyecto de Especialización en Data Science & MLOps &copy; 2026 | Angélica Mata y Steven Murillo
+            </p>
+        </div>
+    </footer>
+
+    <!-- Script de conexión con la API -->
+    <script>
+        const API_URL = "http://localhost:8000/predict";
+
+        document.getElementById("predictionForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById("btnSubmit");
+            const originalBtnText = btn.innerHTML;
+            
+            document.getElementById("resultContainer").classList.add("d-none");
+            document.getElementById("errorContainer").classList.add("d-none");
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Calculando...`;
+
+            const data = {
+                recency: parseFloat(document.getElementById("recency").value),
+                frequency: parseFloat(document.getElementById("frequency").value),
+                monetary: parseFloat(document.getElementById("monetary").value),
+                qty_media: parseFloat(document.getElementById("qty_media").value),
+                qty_total_comprada: parseFloat(document.getElementById("qty_total_comprada").value),
+                unitprice_medio: parseFloat(document.getElementById("unitprice_medio").value)
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(JSON.stringify(result.detail, null, 2));
+                }
+
+                document.getElementById("resCluster").innerText = result.cluster;
+                document.getElementById("resDistance").innerText = result.distance_to_centroid;
+                document.getElementById("resVersion").innerText = result.model_version;
+                document.getElementById("resultContainer").classList.remove("d-none");
+
+            } catch (error) {
+                document.getElementById("errorMessage").innerText = error.message;
+                document.getElementById("errorContainer").classList.remove("d-none");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnText;
+            }
+        });
+    </script>
+</body>
+</html>

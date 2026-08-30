@@ -1,0 +1,16 @@
+{
+  "algorithm": "Clustering Jer\u00e1rquico (Ward, k=4)",
+  "feature_set": [
+    "recency",
+    "frequency",
+    "monetary",
+    "qty_media",
+    "qty_total_comprada",
+    "unitprice_medio"
+  ],
+  "data_version": "2011-12-09 12:50:00",
+  "metrics": {
+    "silhouette_score": 0.1453190975172168,
+    "calinski_harabasz_score": 1059.6656796721938
+  }
+}
