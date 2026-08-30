@@ -35,7 +35,7 @@
     <nav class="navbar navbar-dark bg-dark shadow-sm">
         <div class="container-fluid px-4">
             <span class="navbar-brand mb-0 h1 fs-6 fs-md-5"><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Retail Data Science | MLOps</span>
-            <span class="text-secondary small">API Status: <span class="text-success fw-bold">● Online</span></span>
+            <span class="text-secondary small">API Status: <span id="apiStatus" class="text-warning fw-bold">● Verificando...</span></span>
         </div>
     </nav>
 
@@ -175,6 +175,28 @@
                 btn.innerHTML = originalBtnText;
             }
         });
+
+        // Función para verificar el estado real de la API
+        async function checkApiStatus() {
+            const statusElement = document.getElementById("apiStatus");
+            try {
+                // Intenta hacer un pedido rápido al servidor (ajusta la ruta base si tienes un endpoint de healthcheck, o usa la raíz)
+                const response = await fetch("http://localhost:8000/", { method: "GET" });
+                
+                if (response.ok) {
+                    statusElement.className = "text-success fw-bold";
+                    statusElement.innerHTML = "● Online";
+                } else {
+                    throw new Error("Servidor con problemas");
+                }
+            } catch (error) {
+                statusElement.className = "text-danger fw-bold";
+                statusElement.innerHTML = "● Offline";
+            }
+        }
+
+        // Ejecutar la verificación al cargar la página
+        window.addEventListener("DOMContentLoaded", checkApiStatus);
     </script>
 </body>
 </html>

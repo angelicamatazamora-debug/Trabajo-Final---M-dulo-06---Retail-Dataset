@@ -102,3 +102,7 @@ def predict(features: CustomerFeatures):
         "distance_to_centroid": distance_rounded,
         "model_version": MODEL_VERSION,
     }
+
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "API de Segmentación de Clientes - Retail online"}
