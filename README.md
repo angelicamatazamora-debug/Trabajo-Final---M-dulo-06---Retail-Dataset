@@ -117,7 +117,15 @@ En materia de Docker, se puede remitir al archivo Dockerfile ubicado en la raíz
 ***Nota:*** Se incluye una healthcheck en esta sección para la verificación paulatina del estado del servicio.
 </p>
 
-### 10. API 
+### **10. API**
+<p style="text-align: justify;">
+La implementación de la API se organiza en dos archivos principales dentro de la carpeta designada (src/api/). 
+
+
+- ***schemas.py***: Define los esquemas de datos utilizados por la API mediante Pydantic. Asimismo, esta incluye el modelo de entrada con las seis características del cliente mencionadas anteriormente: recencia, frecuencia, monetario, cantidad media, cantidad total comprada y precio unitario medio, al tiempo que cada campo cuenta con validaciones de tipo y rango. De igual manera, se definen los modelos de respuesta para los endpoints (PredictionResponse y HealthResponse).
+
+- ***app.py***: Contiene la lógica principal de la API. Configura la aplicación FastAPI, define los endpoints /health (verificación del estado del servidor) y /predict (segmentación de clientes), y gestiona la carga del modelo y el escalador. La API intenta cargar el modelo desde el registro de MLflow (modelo kmeans_rfm_clustering); en caso de fallo, realiza el proceso desde el entorno local utilizando models/.
+</p>
 
 ### 11. Monitoring 
 ### 12. Results 
