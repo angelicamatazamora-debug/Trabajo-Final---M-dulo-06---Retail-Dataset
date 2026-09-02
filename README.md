@@ -32,48 +32,53 @@ Se presentan valores nulos en las columnas correspondientes a las variables Cust
 A continuación se logra visualizar la estructuración de la arquitectura del proyecto, destacando los puntos de mayor relevancia.
 
 ```mermaid
-graph LR
-    src[src] --> api[api]
-    src --> engineer_features[engineer_features]
-    src --> ingestion[ingestion]
-    src --> monitoring[monitoring]
-    src --> quality[quality]
-    src --> training[training]
+    graph LR
+        root[Proyecto] --> src[src]
+        root --> app[app]
+        root --> export[export_model.py]
+        root --> model_artifact[model_artifact]
 
-        api --> api_files[__init__.py, app.py, schemas.py]
+        src --> engineer_features[engineer_features]
+        src --> ingestion[ingestion]
+        src --> quality[quality]
+        src --> training[training]
 
         engineer_features --> engineer_file["engineer_features.py"]
-
         ingestion --> ingest["ingest.py"]
-
-        quality --> quality_files[gates.py, quality.py]
-
+        quality --> quality_files["gates.py, quality.py"]
         training --> training_file["training.py"]
+
+        app --> main_file["main.py"]
+
+        training -.registra modelo.-> mlflow[("MLflow Server")]
+        export -.descarga modelo production.-> mlflow
+        export -. empaqueta formato skops .-> artifact
+        main_file -.carga modelo local.-> model_artifact
 ```
 
 ### **4. Repository Structure**
 <p style="text-align: justify;">
 <p style="text-align: justify;">
-En cuanto a la estructura del repositorio, resulta importante destacar la organización del mismo: </p> 
+### **4. Repository Structure**
+<p style="text-align: justify;">
+En cuanto a la estructura del repositorio, resulta importante destacar la organización del mismo:
+</p>
 
 - ***data:*** Contiene tanto los datos crudos (raw), como los datos tras ser procesados (processed).
-- ***models:*** Almacena el modelo y escalador una vez ya entrenados. 
 - ***notebooks:*** Contienen una realización preliminar de la ingesta de datos, calidad de los datos, Data Quality Gates, análisis exploratorio y feature engineering para facilidad de visualización y experimentación.
-- ***reports:*** Contiene figuras y reportes generados durante el análisis.
 - ***src:*** Corresponde al código fuente del proyecto al tiempo que se subdivide en módulos funcionales:
-    - ***api:*** FastAPI para servir el modelo.
     - ***engineer_features:*** Construcción de features RFM.
-    - ***ingestion:*** Ingesta de datos desde la UCI y guardar en formato CSV.
-    - ***monitoring:*** Scripts para monitoreo y detección de drift.
+    - ***ingestion:*** Ingesta de datos desde la UCI y guardado en formato CSV.
     - ***quality:*** Scripts de limpieza y validación de calidad de los datos.
-    - ***training:*** Script principal de entrenamiento del modelo.
+    - ***training:*** Script principal de entrenamiento y comparación de modelos de clustering, con registro de experimentos en MLflow.
+- ***app:*** Contiene la API de inferencia (main.py), construida con FastAPI, que sirve el modelo ya entrenado.
+- ***export_model.py:*** Script que descarga desde el Registry de MLflow el modelo marcado como versión de producción.
+- ***model_artifact:*** Contiene el modelo final exportado en formato .skops, listo para ser cargado por la API.
+- ***mlartifacts:*** Artefactos generados automáticamente por el servidor local de MLflow durante el tracking de experimentos.
 - ***tests:*** Pruebas unitarias para datos, modelo y API.
-- ***app:*** (Contiene archivos del frontend o lógica adicional).
-- ***mlartifacts*** y ***model_artifact:*** Artefactos generados por MLflow.
-- ***export_model.py:*** Script para exportar el modelo.
-- ***index.html:*** Interfaz para consumir la API.
-- ***Dockerfile:*** Configuración para contenerización.
-- ***requirements.txt:*** Dependencias del proyecto.
+- ***index.html:*** Interfaz para consumir la API desde el navegador.
+- ***Dockerfile:*** Configuración para contenerización del servicio de inferencia.
+- ***requirements.txt / requirements-dev.txt:*** Dependencias del proyecto.
 
 ### **5. Installation**
 En aras de ejecutar correctamente el proyecto, favor seguir los siguientes pasos: 
@@ -94,6 +99,8 @@ El proceso de entrenamiento se realiza mediante el script training.py (src/train
 - ***Entrenamiento de múltiples modelos***: Se ejecutan tres algoritmos de clustering: K-Means (k=4), Clustering Jerárquico (Ward, k=4) y DBSCAN (eps=1.5, min_samples=10). Cada modelo se evalúa mediante calinski_harabasz_score y silhouette_score, lo que permite comparar su rendimiento.
 - ***Registro en MLflow***: Para cada modelo, se registran parámetros (algoritmo, features, semilla aleatoria, versión de datos), métricas y artefactos (el pipeline completo, un gráfico PCA 2D de los clusters y un archivo JSON con la configuración del run).
 
+Una vez que uno de los modelos es promovido a la etapa de producción dentro del Registry de MLflow, el script export_model.py se encarga de descargar ese modelo y empaquetarlo de forma autocontenida en la carpeta model_artifact/. Esto permite que la API de inferencia funcione de manera independiente, sin necesidad de mantener una conexión activa al servidor de MLflow'
+
 Una vez entrenados y evaluados, el pipeline completo se guarda en la carpeta models para su posterior utilización en la API y en monitoreo. </p>
 
 ### **8. MLflow**
@@ -107,24 +114,30 @@ El seguimiento de los experimentos se realiza por medio de MLflow. Lo anterior s
 - **Gráfico PCA**: Se genera una proyección de los clusters y se guarda como imagen para su visualización.
 - **Archivo JSON**: Se almacena un resumen con los parámetros. 
 
-<p style="text-align: justify;"> 
-Por otro lado, haciendo alución al registro de modelos, cada modelo nuevo registrado recibe un número de versión, facilitando el seguimiento de cambios. Asimismo, la API carga el modelo desde el Registry, asegurando que siempre se utilice la versión más reciente del mismo. 
+
+<p style="text-align: justify;">
+Por otro lado, haciendo alusión al registro de modelos, cada modelo nuevo registrado recibe un número de versión, facilitando el seguimiento de cambios. El modelo marcado como versión de producción es posteriormente exportado mediante export_model.py hacia un archivo autocontenido, que es el que finalmente consume la API.
+</p>
 
 ### **9. Docker** 
 <p style="text-align: justify;">
-En materia de Docker, se puede remitir al archivo Dockerfile ubicado en la raíz del proyecto. En este se utiliza la versión de Python 3.12-slim. En esta misma línea, primero se copia el archivo requirements.txt y se instalan las dependencias, aprovechando el caché de Docker para evitar reinstalaciones innecesarias. Posteriormente se copia el código de la API, así como el modelo y artefactos a la imagen. 
+En materia de Docker, se puede remitir al archivo Dockerfile ubicado en la raíz del proyecto. En este se utiliza la versión de Python 3.12-slim. En esta misma línea, primero se copia el archivo requirements.txt y se instalan las dependencias, aprovechando el caché de Docker para evitar reinstalaciones innecesarias. Posteriormente se copia el código de la API, así como el modelo y artefactos a la imagen. De igual manera, se copia la carpeta model_artifact/ (generada previamente mediante export_model.py) dentro de la imagen, de forma que el contenedor pueda servir predicciones sin depender de una conexión externa al servidor de MLflow.
 
 ***Nota:*** Se incluye una healthcheck en esta sección para la verificación paulatina del estado del servicio.
 </p>
 
 ### **10. API**
 <p style="text-align: justify;">
-La implementación de la API se organiza en dos archivos principales dentro de la carpeta designada (src/api/). 
+La implementación de la API se encuentra centralizada en un único archivo, app/main.py, construido con FastAPI.
+</p>
 
+- ***Carga del modelo:*** La API no se conecta al servidor de MLflow en tiempo de ejecución. En su lugar, carga directamente el archivo .skops ubicado en model_artifact, utilizando la librería skops.
 
-- ***schemas.py***: Define los esquemas de datos utilizados por la API mediante Pydantic. Asimismo, esta incluye el modelo de entrada con las seis características del cliente mencionadas anteriormente: recencia, frecuencia, monetario, cantidad media, cantidad total comprada y precio unitario medio, al tiempo que cada campo cuenta con validaciones de tipo y rango. De igual manera, se definen los modelos de respuesta para los endpoints (PredictionResponse y HealthResponse).
-
-- ***app.py***: Contiene la lógica principal de la API. Configura la aplicación FastAPI, define los endpoints /health (verificación del estado del servidor) y /predict (segmentación de clientes), y gestiona la carga del modelo y el escalador. La API intenta cargar el modelo desde el registro de MLflow (modelo kmeans_rfm_clustering); en caso de fallo, realiza el proceso desde el entorno local utilizando models/.
+- ***Esquemas de datos:*** Definidos con Pydantic dentro del mismo archivo. CustomerFeatures especifica las seis características del cliente (recencia, frecuencia, monetario, cantidad media, cantidad total comprada y precio unitario medio), cada una con sus validaciones de rango correspondientes. PredictionResponse define la estructura de la respuesta.
+- ***Endpoints:***
+    - GET /: Verifica que el servicio esté en línea.
+    - GET /health: Verifica que el modelo se haya cargado correctamente.
+    - POST /predict: Recibe las características de un cliente, aplica la misma transformación logarítmica utilizada en entrenamiento, y devuelve el cluster asignado.
 </p>
 
 ### 11. Monitoring 
