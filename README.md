@@ -74,7 +74,8 @@ La ingesta de los datos se realiza mediante el script identificado como Ingesta.
 En referencia al proceso de entrenamiento del modelo de segmentación se realiza mediante train.py (src/entrenamiento/train.py), el cual integra todas las etapas previamente mencionadas de manera secuencial como parte del pipeline, preparando los datos y construyendo el modelo. Una vez completadas las etapas de ingesta, calidad y limpieza y feature engineering, se procede con el entrenamiento del modelo. El script ejecuta las siguientes tareas de manera secuencial: </p>
 
 - ***Preparación de los datos para el Clustering:*** A partir de la matriz RFM, se seleccionan las variables (recency, frequency, monetary, qty_media, qty_total_comprada, unitprice_medio). Sobre este conjunto, se aplica una transformación logarítmica (np.log1p) para mitigar el impacto de valores extremos y, finalmenye un escalado utilizando StandardScaler para estandarizar las magnitudes de las variables.
-- ***Entrenamiento del modelo:*** 
+- ***Entrenamiento del modelo:***
+
 
 ### 8. MLflow 
 ### 9. Docker 
