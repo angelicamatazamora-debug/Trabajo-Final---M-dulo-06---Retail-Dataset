@@ -13,6 +13,13 @@ data/external/
 *.csv
 *.parquet
 
+# Ignorar entornos virtuales
+online_retail_project/
+
+# Ignorar caché de Python
+__pycache__/
+*/__pycache__/
+
 # MLflow
 mlruns/
 mlflow.db
