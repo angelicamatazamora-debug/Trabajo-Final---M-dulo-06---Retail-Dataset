@@ -5,6 +5,12 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
+import time
+import logging
+
+# Configurar logging para el monitoreo de System (Latencia y Errores)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("api_monitoring")
 
 # Ruta al directorio del modelo exportado
 MODEL_DIR = Path(__file__).resolve().parent.parent / "model_artifact"
@@ -23,6 +29,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def system_monitoring_middleware(request, call_next):
+    start_time = time.time()
+    
+    # Procesar la petición
+    response = await call_next(request)
+    
+    # Calcular latencia en milisegundos
+    process_time = (time.time() - start_time) * 1000
+    
+    # Registrar métricas clave (Latencia, Status / ErrorRate implícito)
+    logger.info(
+        f"Method: {request.method} | Path: {request.url.path} | "
+        f"Status: {response.status_code} | Latency: {process_time:.2f}ms"
+    )
+    
+    # Inyectar la latencia en las cabeceras de respuesta para visibilidad del cliente
+    response.headers["X-Process-Time"] = f"{process_time:.2f}ms"
+    return response
 
 def get_model():
     try:
