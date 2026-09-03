@@ -164,7 +164,7 @@ La implementación de la API se encuentra centralizada en un único archivo, app
 ### **11. Monitoring**
 - ***Monitoreo Operativo (O1 - Sistema):*** Implementado mediante un middleware en FastAPI que registra en tiempo real las métricas operativas de la API (Method, Path, Status y Latency en milisegundos), inyectando además la cabecera X-Process-Time para visibilidad directa del cliente.
 
-- ***Monitoreo de Estabilidad y Data Drift (O2 - PSI):***Controlado mediante el cálculo del Population Stability Index (PSI) para evaluar desviaciones en la distribución de las variables RFM en lotes de producción respecto a los datos de referencia iniciales. Los umbrales se estructuran bajo la siguiente justificación técnica:
+- ***Monitoreo de Estabilidad y Data Drift (O2 - PSI):*** Controlado mediante el cálculo del Population Stability Index (PSI) para evaluar desviaciones en la distribución de las variables RFM en lotes de producción respecto a los datos de referencia iniciales. Los umbrales se estructuran bajo la siguiente justificación técnica:
     - PSI < 0.1 (OK): Variaciones menores al 10% por fluctuaciones estacionales normales del mercado minorista; sin intervención requerida.
     - 0.1 <= PSI <= 0.25 (WARNING): Cambio moderado (10%-25%). Activa una advertencia para seguimiento preventivo sin requerir reentrenamiento inmediato.
     - PSI > 0.25 (ALERT): Cambio sustancial superior al 25% (campañas masivas o alteraciones profundas del consumidor). Invalida las distancias a los centroides y gatilla la necesidad de evaluar el reentrenamiento.
