@@ -81,9 +81,31 @@ En cuanto a la estructura del repositorio, resulta importante destacar la organi
 
 ### **5. Installation**
 En aras de ejecutar correctamente el proyecto, favor seguir los siguientes pasos: 
-1. **Clonar el repositorio**: 
+1. **Clonar el repositorio:**
+   - git clone https://github.com/angelicamatazamora-debug/Trabajo-Final---M-dulo-06---Retail-Dataset
+   - cd Trabajo-Final---M-dulo-06---Retail-Dataset
 2. **Activar un entorno virtual:**
+   - py -3.12 -m venv online_retail_project
+   - .\online_retail_project\Scripts\activate
 3. **Instalar las dependencias:**
+   - python -m pip install mlflow scikit-learn pandas matplotlib fastapi uvicorn joblib
+   - pip install -r requirements.txt
+   - pip install -r requirements-dev.txt
+4. **Inicializar el servidor de MLflow:**
+   - mlflow server --backend-store-uri sqlite:///miflow.db --default-artifact-root ./mlartifacts --host 127.0.0.1 --port 5000
+5. **Entrenamiento y exportación del modelo:**
+   - py -m src.training.training  
+   - python export_model.py
+6. **Despliegue local con Docker:**
+   - docker build -t online_retail . 
+   - docker run -d --name online-retail-api -p 8000:8000 online_retail
+   - docker logs -f online-retail-api
+7. **Ejecución de pruebas y validaciones:**
+   - pytest tests/ -v
+   - python test_monitoring.py
+   - python test_quality.py
+   - python test_retrain.py
+   - python -m src.monitoring.simulator
 
 ### **6. Data Ingestion**
 <p style="text-align: justify;">
@@ -139,8 +161,28 @@ La implementación de la API se encuentra centralizada en un único archivo, app
     - POST /predict: Recibe las características de un cliente, aplica la misma transformación logarítmica utilizada en entrenamiento, y devuelve el cluster asignado.
 </p>
 
-### ***11. Monitoring***
+### **11. Monitoring**
+- ***Monitoreo Operativo (O1 - Sistema):*** Implementado mediante un middleware en FastAPI que registra en tiempo real las métricas operativas de la API (Method, Path, Status y Latency en milisegundos), inyectando además la cabecera X-Process-Time para visibilidad directa del cliente.
 
-### ***12.
+- ***Monitoreo de Estabilidad y Data Drift (O2 - PSI):***Controlado mediante el cálculo del Population Stability Index (PSI) para evaluar desviaciones en la distribución de las variables RFM en lotes de producción respecto a los datos de referencia iniciales. Los umbrales se estructuran bajo la siguiente justificación técnica:
+    - PSI < 0.1 (OK): Variaciones menores al 10% por fluctuaciones estacionales normales del mercado minorista; sin intervención requerida.
+    - 0.1 <= PSI <= 0.25 (WARNING): Cambio moderado (10%-25%). Activa una advertencia para seguimiento preventivo sin requerir reentrenamiento inmediato.
+    - PSI > 0.25 (ALERT): Cambio sustancial superior al 25% (campañas masivas o alteraciones profundas del consumidor). Invalida las distancias a los centroides y gatilla la necesidad de evaluar el reentrenamiento.
+  
+- ***Simulación de Producción y Cambios por Lotes (O3 - Drift Simulation):*** Validado mediante el script de simulación (src/monitoring/simulator.py), el cual emite lotes secuenciales con contaminación múltiple para comprobar la capacidad del sistema de detectar desviaciones y disparar de forma controlada la lógica de reentrenamiento.
+  IF (PSI > 0.25) AND (Performance / Distancia a Centoides < Threshold)
+</p>
+
 ### 12. Results 
+- ***Experiment:*** Fase de ejecución paralela donde se evaluaron tres algoritmos de clustering (K-Means, Clustering Jerárquico y DBSCAN), registrando parámetros, métricas y artefactos de forma aislada.
+
+- ***Candidate:*** Evaluación comparativa que determinó a K-Means (k=4) como el modelo óptimo al superar a las demás alternativas en las métricas de validación interna (alcanzando un silhouette_score superior de 0.2045).
+
+- ***Validation:*** Revisión exhaustiva de los artefactos generados (análisis de clústeres mediante proyecciones PCA y el archivo run_config.json) que validaron la estabilidad y consistencia estructural de las variables RFM.
+
+- ***Production:*** Registro oficial del modelo en el Model Registry bajo el nombre kmeans_retail_model con su respectiva etiqueta de producción, permitiendo su exportación autocontenida para ser consumido de manera independiente por la API.
+
 ### 13. Team
+
+- ***Angélica Mata***
+- ***Steven Murillo***
