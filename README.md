@@ -102,9 +102,9 @@ En aras de ejecutar correctamente el proyecto, favor seguir los siguientes pasos
    - docker logs -f online-retail-api
 7. **Ejecución de pruebas y validaciones:**
    - pytest tests/ -v
-   - python test_monitoring.py
-   - python test_quality.py
-   - python test_retrain.py
+   - python -m tests.test_monitoring.py
+   - python -m tests.test_quality.py
+   - python -m tests.test_retrain.py
    - python -m src.monitoring.simulator
 
 ### **6. Data Ingestion**
