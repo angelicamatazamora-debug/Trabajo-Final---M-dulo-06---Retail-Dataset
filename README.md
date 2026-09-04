@@ -33,27 +33,33 @@ A continuación se logra visualizar la estructuración de la arquitectura del pr
 
 ```mermaid
     graph LR
-        root[Proyecto] --> src[src]
-        root --> app[app]
-        root --> export[export_model.py]
-        root --> model_artifact[model_artifact]
+    root[Proyecto] --> src[src]
+    root --> app[app]
+    root --> export[export_model.py]
+    root --> artifact[model_artifact]
+    root --> tests[tests]
+    root --> notebooks[notebooks]
 
-        src --> engineer_features[engineer_features]
-        src --> ingestion[ingestion]
-        src --> quality[quality]
-        src --> training[training]
+    src --> engineer_features[engineer_features]
+    src --> ingestion[ingestion]
+    src --> quality[quality]
+    src --> training[training]
+    src --> monitoring[monitoring]
 
-        engineer_features --> engineer_file["engineer_features.py"]
-        ingestion --> ingest["ingest.py"]
-        quality --> quality_files["gates.py, quality.py"]
-        training --> training_file["training.py"]
+    engineer_features --> engineer_file["engineer_features.py"]
+    ingestion --> ingest["ingest.py"]
+    quality --> quality_files["gates.py, quality.py, validator.py"]
+    training --> training_files["training.py, retrainer.py"]
+    monitoring --> monitoring_files["monitor.py, simulator.py"]
 
-        app --> main_file["main.py"]
+    app --> main_file["main.py"]
 
-        training -.registra modelo.-> mlflow[("MLflow Server")]
-        export -.descarga modelo production.-> mlflow
-        export -. empaqueta formato skops .-> artifact
-        main_file -.carga modelo local.-> model_artifact
+    tests --> test_files["test_api.py, test_data.py, test_model.py,<br/>test_monitoring.py, test_quality.py, test_retrain.py"]
+
+    training -. registra modelo .-> mlflowserver[MLflow Server]
+    export -. descarga modelo production .-> mlflowserver
+    export -. empaqueta formato skops .-> artifact
+    main_file -. carga modelo local .-> artifact
 ```
 
 ### **4. Repository Structure**
